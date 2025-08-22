@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Compilatore Ricetta Rossa Avanzato</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .form-container {
+      min-width: 350px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      position: relative;
+    }
+    .form-container h2 {
+      color: #b00;
+      margin-top: 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+    input[type="text"], input[type="date"], textarea, select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
+      border-color: #b00;
+      outline: none;
+    }
+    textarea { 
+      resize: vertical;
+      min-height: 60px;
+    }
+    fieldset {
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      background: #f9f9f9;
+    }
+    legend {
+      color: #b00;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 0 8px;
+    }
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #b00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex: 1;
+    }
+    button:hover { 
+      background: #900; 
+    }
+    button.secondary {
+      background: #666;
+    }
+    button.secondary:hover {
+      background: #444;
+    }
+    
+    
+#prev-prescrizione {
+    white-space: pre-wrap;       /* Mantiene i ritorni a capo manuali */
+    word-wrap: break-word;       /* Forza il wrapping sulle parole lunghe */
+    line-height: 5mm;            /* Allineamento verticale corretto */
+    overflow: hidden;            /* Previene overflow verticale */
+    width: 125mm !important;     /* Larghezza massima garantita */
+}
+
+    /* Anteprima Ricetta */
+    .preview-container {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      min-width: 0;
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .preview-header h3 {
+      color: #b00;
+      margin: 0;
+    }
+    .preview-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .ricetta {
+      width: 197mm;
+      height: 153mm;
+      background: #fff url('https://pplx-res.cloudinary.com/image/upload/v1747341602/user_uploads/40876537/7fb38985-0de8-44e5-8b46-a2a4925b8ef9/Untitled.jpg');
+      background-size: contain;
+      background-position: center center;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+      box-shadow: 0 0 0 1px #ddd;
+    }
+    .campo {
+      position: absolute;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      color: #222;
+      white-space: pre;
+      letter-spacing: 1px;
+      #prev-prescrizione {
+        font-family: Arial !important;
+        font-size: 15px !important;
+        letter-spacing: 0.2px;
+      }
+
+    }
+    
+    /* Modal per la modifica delle posizioni */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow-y: auto;
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 500px;
+      max-width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      color: #b00;
+    }
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+    }
+    .position-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .position-group {
+      margin-bottom: 10px;
+    }
+    .modal-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .background-controls {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    .background-header {
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #555;
+    }
+    .esenzione-code-controls {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    .esenzione-header {
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    /* Stampa */
+    @media print {
+      @page {
+        size: A5 landscape;
+        margin: 0;
+      }
+      body * {
+        visibility: hidden;
+      }
+      .ricetta, .ricetta * {
+        visibility: visible !important;
+      }
+      .ricetta {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 197mm !important;
+        height: 153mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        background-image: none !important;
+      }
+    }
+
+    #print-ricetta { display: none; }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .container {
+        flex-direction: column;
+      }
+      .preview-container {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form id="formRicetta" class="form-container" autocomplete="off">
+      <h2>Compila Ricetta Rossa</h2>
+      
+      <div class="form-group">
+        <label for="inputNome">Cognome e Nome:</label>
+        <input type="text" id="inputNome">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputIndirizzo">Indirizzo:</label>
+        <input type="text" id="inputIndirizzo">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputCF">Codice Fiscale:</label>
+        <input type="text" id="inputCF" maxlength="16" style="text-transform:uppercase;">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputASL">Codice ASL:</label>
+        <input type="text" id="inputASL" maxlength="5" value="TO204">
+      </div>
+      
+      <fieldset>
+        <legend>Esenzione</legend>
+        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <input type="radio" name="esenzione" id="nonEsente" checked>
+            Non esente
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px;">
+            <input type="radio" name="esenzione" id="esente">
+            Codice esenzione:
+          </label>
+        </div>
+        <input type="text" id="inputCodiceEsenzione" maxlength="6" style="width: 100%;" disabled>
+      </fieldset>
+      
+      <div class="form-group">
+        <label for="inputConfezioni">Confezioni/Prestazioni:</label>
+        <input type="text" id="inputConfezioni" maxlength="3" value="1">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputPrescrizione">Prescrizione:</label>
+        <textarea id="inputPrescrizione" rows="3"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="inputNota1">Nota 1:</label>
+        <input type="text" id="inputNota1" maxlength="3">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputNota2">Nota 2:</label>
+        <input type="text" id="inputNota2" maxlength="3">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputData">Data Prescrizione:</label>
+        <input type="date" id="inputData">
+      </div>
+      
+      <div class="form-group">
+        <label for="inputTipo">Tipo Ricetta:</label>
+        <input type="text" id="inputTipo" maxlength="2">
+      </div>
+      
+      <div class="form-group" style="margin-top: 20px;">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="inputStampaPC" checked>
+          Stampa PC
+        </label>
+      </div>
+      
+      <div class="button-group">
+        <button type="button" id="btnGeneraPDF">Genera PDF</button>
+        <button type="button" id="btnGeneraJPG">Genera JPG</button>
+        <button type="button" class="secondary" id="btnModificaPosizioni">Modifica Posizioni</button>
+      </div>
+    </form>
+    
+    <div class="preview-container">
+      <div class="preview-header">
+        <h3>Anteprima Ricetta</h3>
+        <div class="preview-controls">
+          <button type="button" class="secondary" id="btnResetPosizioni" style="padding: 5px 10px; font-size: 12px;">Reset Posizioni</button>
+        </div>
+      </div>
+      <div class="ricetta" id="preview-ricetta">
+        <div id="prev-nome" class="campo" data-default-top="7" data-default-left="5" style="top:7mm;left:5mm;width:80mm;font-family:Arial;font-size:15px;"></div>
+        <div id="prev-indirizzo" class="campo" data-default-top="16" data-default-left="5" style="top:16mm;left:5mm;width:80mm;font-family:Arial;font-size:15px;"></div>
+        <div id="prev-codice-fiscale" class="campo" data-default-top="32" data-default-left="103" style="top:32mm;left:103mm;"></div>
+        <div id="prev-codice-asl" class="campo" data-default-top="41" data-default-left="109" style="top:41mm;left:109mm;"></div>
+        <div id="prev-confezioni" class="campo" data-default-top="88" data-default-left="16" style="top:88mm;left:16mm;"></div>
+        <div id="prev-prescrizione" class="campo" data-default-top="53" data-default-left="7" style="top:53mm;left:7mm;width:125mm;height:35mm;font-family:Arial;font-size:15px;"></div>
+        <div id="prev-nota1" class="campo" data-default-top="53" data-default-left="140" style="top:53mm;left:140mm;"></div>
+        <div id="prev-nota2" class="campo" data-default-top="62" data-default-left="140" style="top:62mm;left:140mm;"></div>
+        <div id="prev-data-prescrizione" class="campo" data-default-top="88" data-default-left="100.5" style="top:88mm;left:100.5mm;"></div>
+        <div id="prev-stampa-pc" class="campo" data-default-top="5" data-default-left="186" style="top:5mm;left:186mm;"></div>
+        <div id="prev-tipo-ricetta" class="campo" data-default-top="88" data-default-left="61.5" style="top:88mm;left:61.5mm;"></div>
+        <div id="prev-esenzione-x" class="campo" data-default-top="41" data-default-left="7.5" style="top:41mm;left:7.5mm;width:5mm;height:5mm;text-align:center;font-size:15px;"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Ricetta per la stampa -->
+  <div id="print-ricetta" class="ricetta"></div>
+  
+  <!-- Modal per la modifica delle posizioni -->
+  <div id="positionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Modifica Posizione Elementi</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="position-controls">
+        <div>
+          <label for="selectElement">Elemento:</label>
+          <select id="selectElement" class="form-control">
+            <option value="prev-nome">Nome</option>
+            <option value="prev-indirizzo">Indirizzo</option>
+            <option value="prev-codice-fiscale">Codice Fiscale</option>
+            <option value="prev-codice-asl">Codice ASL</option>
+            <option value="prev-confezioni">Confezioni</option>
+            <option value="prev-prescrizione">Prescrizione</option>
+            <option value="prev-nota1">Nota 1</option>
+            <option value="prev-nota2">Nota 2</option>
+            <option value="prev-data-prescrizione">Data Prescrizione</option>
+            <option value="prev-stampa-pc">Stampa PC</option>
+            <option value="prev-tipo-ricetta">Tipo Ricetta</option>
+            <option value="prev-esenzione-x">Esenzione X</option>
+            
+            
+          </select>
+        </div>
+        <div>
+          <label for="inputElementId">ID Elemento:</label>
+          <input type="text" id="inputElementId" readonly class="form-control">
+        </div>
+      </div>
+      <div class="position-controls">
+        <div class="position-group">
+          <label for="inputPosTop">Posizione dall'alto (mm):</label>
+          <input type="number" id="inputPosTop" step="0.1" class="form-control">
+        </div>
+        <div class="position-group">
+          <label for="inputPosLeft">Posizione da sinistra (mm):</label>
+          <input type="number" id="inputPosLeft" step="0.1" class="form-control">
+        </div>
+      </div>
+      
+      <!-- Sezione controllo codice esenzione -->
+      <div class="esenzione-code-controls" id="esenzioneCodeControls">
+        <div class="esenzione-header">Posizione caratteri codice esenzione</div>
+        <div class="position-controls">
+          <div class="position-group">
+            <label for="inputEsenzioneBaseTop">Posizione dall'alto (mm):</label>
+            <input type="number" id="inputEsenzioneBaseTop" step="0.1" class="form-control" value="41">
+          </div>
+          <div class="position-group">
+            <label for="inputEsenzioneBaseLeft">Posizione primo carattere (mm):</label>
+            <input type="number" id="inputEsenzioneBaseLeft" step="0.1" class="form-control" value="17.5">
+          </div>
+        </div>
+        <div class="position-group">
+          <label for="inputEsenzioneCharWidth">Larghezza carattere (mm):</label>
+          <input type="number" id="inputEsenzioneCharWidth" step="0.1" class="form-control" value="5.3125">
+        </div>
+      </div>
+      
+      <!-- Sezione controllo sfondo -->
+      <div class="background-controls">
+        <div class="background-header">Posizione sfondo ricetta</div>
+        <div class="position-controls">
+          <div class="position-group">
+            <label for="selectBgPosition">Posizione:</label>
+            <select id="selectBgPosition" class="form-control">
+              <option value="center center">Centro (default)</option>
+              <option value="top left">Alto sinistra</option>
+              <option value="top center">Alto centro</option>
+              <option value="top right">Alto destra</option>
+              <option value="center left">Centro sinistra</option>
+              <option value="center right">Centro destra</option>
+              <option value="bottom left">Basso sinistra</option>
+              <option value="bottom center">Basso centro</option>
+              <option value="bottom right">Basso destra</option>
+              <option value="custom">Personalizzata</option>
+            </select>
+          </div>
+          <div class="position-group">
+            <label for="selectBgSize">Dimensione:</label>
+            <select id="selectBgSize" class="form-control">
+              <option value="contain">Adatta (default)</option>
+              <option value="cover">Copri</option>
+              <option value="100% 100%">Allarga</option>
+              <option value="custom">Personalizzata</option>
+            </select>
+          </div>
+        </div>
+        <div class="position-controls" id="customBgPositionControls" style="display: none;">
+          <div class="position-group">
+            <label for="inputBgPosX">Posizione X:</label>
+            <input type="text" id="inputBgPosX" class="form-control" value="center">
+          </div>
+          <div class="position-group">
+            <label for="inputBgPosY">Posizione Y:</label>
+            <input type="text" id="inputBgPosY" class="form-control" value="center">
+          </div>
+        </div>
+        <div class="position-controls" id="customBgSizeControls" style="display: none;">
+          <div class="position-group">
+            <label for="inputBgWidth">Larghezza (% o px):</label>
+            <input type="text" id="inputBgWidth" class="form-control" value="100%">
+          </div>
+          <div class="position-group">
+            <label for="inputBgHeight">Altezza (% o px):</label>
+            <input type="text" id="inputBgHeight" class="form-control" value="100%">
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="secondary" id="btnCancelPosition">Annulla</button>
+        <button type="button" id="btnSavePosition">Salva</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Variabili globali
+let currentElement = null;
+let campoPositions = {};
+let backgroundSettings = {
+  position: 'center center',
+  size: 'contain'
+};
+let esenzioneSettings = {
+  baseTop: 41,
+  baseLeft: 17.5,
+  charWidth: 5.3125
+};
+
+// Funzioni di utilità
+function padRight(str, len, chr='\\') {
+  str = (str || '').toUpperCase();
+  while (str.length < len) str += chr;
+  return str.slice(0, len);
+}
+
+function createBoxString(str, len, boxLen=5.3125) {
+  str = padRight(str, len);
+  let html = '';
+  for (let i=0; i<len; ++i) {
+    html += `<span style="display:inline-block;width:${boxLen}mm;text-align:center;">${str[i]}</span>`;
+  }
+  return html;
+}
+
+// Dopo la funzione createBoxString
+function wrapPrescriptionText(text) {
+    const maxCharsPerLine = 72;  // Calcolato per font 15px Arial (125mm/1.736mm per carattere)
+    const lines = [];
+    
+    text.split('\n').forEach(paragraph => {
+        let currentLine = '';
+        paragraph.split(' ').forEach(word => {
+            if ((currentLine + word).length > maxCharsPerLine) {
+                lines.push(currentLine.trim());
+                currentLine = '';
+            }
+            currentLine += word + ' ';
+        });
+        lines.push(currentLine.trim());
+    });
+    
+    return lines.join('<br>');
+}
+
+function formatDateToGGMMAA(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const gg = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const aa = String(d.getFullYear()).slice(-2);
+  return gg + mm + aa;
+}
+
+// Applicazione impostazioni sfondo
+function applyBackgroundSettings() {
+  const ricettaContainer = document.getElementById('preview-ricetta');
+  
+  let position = backgroundSettings.position;
+  let size = backgroundSettings.size;
+  
+  if (position === 'custom') {
+    position = `${backgroundSettings.posX} ${backgroundSettings.posY}`;
+  }
+  
+  if (size === 'custom') {
+    size = `${backgroundSettings.width} ${backgroundSettings.height}`;
+  }
+  
+  ricettaContainer.style.backgroundPosition = position;
+  ricettaContainer.style.backgroundSize = size;
+}
+
+// Aggiornamento anteprima
+function updatePreview() {
+  document.getElementById('prev-nome').textContent = document.getElementById('inputNome').value;
+  document.getElementById('prev-indirizzo').textContent = document.getElementById('inputIndirizzo').value;
+  const prescrizioneText = document.getElementById('inputPrescrizione').value;
+  document.getElementById('prev-prescrizione').innerHTML = wrapPrescriptionText(prescrizioneText);
+
+  document.getElementById('prev-codice-fiscale').innerHTML = createBoxString(
+    document.getElementById('inputCF').value, 
+    16, 
+    5.3125
+  );
+
+  document.getElementById('prev-codice-asl').innerHTML = createBoxString(
+    document.getElementById('inputASL').value, 
+    5, 
+    5.3125
+  );
+
+  let conf = document.getElementById('inputConfezioni').value;
+  conf = conf ? padRight(conf, 3) : '\\\\\\';
+  document.getElementById('prev-confezioni').innerHTML = createBoxString(conf, 3, 5.3125);
+
+  let nota1 = document.getElementById('inputNota1').value;
+  let nota2 = document.getElementById('inputNota2').value;
+  document.getElementById('prev-nota1').innerHTML = createBoxString(nota1, 3, 5.3125);
+  document.getElementById('prev-nota2').innerHTML = createBoxString(nota2, 3, 5.3125);
+
+  document.getElementById('prev-tipo-ricetta').innerHTML = createBoxString(
+    document.getElementById('inputTipo').value, 
+    2, 
+    5.3125
+  );
+
+  const dataStr = formatDateToGGMMAA(document.getElementById('inputData').value);
+  document.getElementById('prev-data-prescrizione').innerHTML = createBoxString(dataStr, 6, 5.3125);
+
+  document.getElementById('prev-stampa-pc').textContent = document.getElementById('inputStampaPC').checked ? 'X' : '';
+
+  const prevEsenzioneX = document.getElementById('prev-esenzione-x');
+  document.querySelectorAll('.prev-esenzione-codice-char').forEach(e => e.remove());
+  
+  if (document.getElementById('nonEsente').checked) {
+    prevEsenzioneX.textContent = 'X';
+    prevEsenzioneX.style.display = '';
+  } else {
+    prevEsenzioneX.textContent = '';
+    prevEsenzioneX.style.display = 'none';
+    const cod = padRight(document.getElementById('inputCodiceEsenzione').value, 6);
+    for (let i = 0; i < 6; ++i) {
+      const span = document.createElement('span');
+      span.className = 'prev-esenzione-codice-char';
+      span.style.position = 'absolute';
+      span.style.left = (esenzioneSettings.baseLeft + i * esenzioneSettings.charWidth) + 'mm';
+      span.style.top = esenzioneSettings.baseTop + 'mm';
+      span.style.width = esenzioneSettings.charWidth + 'mm';
+      span.style.height = '5mm';
+      span.style.textAlign = 'center';
+      span.style.lineHeight = '5mm';
+      span.style.fontSize = '15px';
+      span.style.fontFamily = 'Courier New, monospace';
+      span.textContent = cod[i];
+      document.getElementById('preview-ricetta').appendChild(span);
+    }
+  }
+  
+  applyBackgroundSettings();
+  applyCustomPositions();
+}
+
+// Gestione esenzione
+function setupEsenzioneToggle() {
+  document.getElementById('nonEsente').addEventListener('change', function() {
+    const esenzioneInput = document.getElementById('inputCodiceEsenzione');
+    if (this.checked) {
+      esenzioneInput.value = '';
+      esenzioneInput.disabled = true;
+    } else {
+      esenzioneInput.disabled = false;
+      esenzioneInput.focus();
+    }
+    updatePreview();
+  });
+
+  document.getElementById('esente').addEventListener('change', function() {
+    const esenzioneInput = document.getElementById('inputCodiceEsenzione');
+    if (this.checked) {
+      esenzioneInput.disabled = false;
+      esenzioneInput.focus();
+    } else {
+      esenzioneInput.value = '';
+      esenzioneInput.disabled = true;
+    }
+    updatePreview();
+  });
+
+  document.getElementById('inputCodiceEsenzione').addEventListener('input', function() {
+    if (this.value.length > 0) {
+      document.getElementById('esente').checked = true;
+      document.getElementById('nonEsente').checked = false;
+    } else {
+      document.getElementById('nonEsente').checked = true;
+      document.getElementById('esente').checked = false;
+    }
+    updatePreview();
+  });
+}
+
+// Gestione posizioni personalizzate
+function saveCustomPositions() {
+  localStorage.setItem('ricettaPositions', JSON.stringify(campoPositions));
+  localStorage.setItem('ricettaBackgroundSettings', JSON.stringify(backgroundSettings));
+  localStorage.setItem('ricettaEsenzioneSettings', JSON.stringify(esenzioneSettings));
+}
+
+function loadCustomPositions() {
+  const savedPositions = localStorage.getItem('ricettaPositions');
+  if (savedPositions) {
+    Object.assign(campoPositions, JSON.parse(savedPositions));
+  }
+  
+  const savedBgSettings = localStorage.getItem('ricettaBackgroundSettings');
+  if (savedBgSettings) {
+    Object.assign(backgroundSettings, JSON.parse(savedBgSettings));
+  }
+  
+  const savedEsenzioneSettings = localStorage.getItem('ricettaEsenzioneSettings');
+  if (savedEsenzioneSettings) {
+    Object.assign(esenzioneSettings, JSON.parse(savedEsenzioneSettings));
+  }
+}
+
+function applyCustomPositions() {
+  Object.keys(campoPositions).forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.top = campoPositions[id].top + 'mm';
+      element.style.left = campoPositions[id].left + 'mm';
+    }
+  });
+}
+
+function resetPositionsToDefault() {
+  campoPositions = {};
+  backgroundSettings = {
+    position: 'center center',
+    size: 'contain'
+  };
+  esenzioneSettings = {
+    baseTop: 41,
+    baseLeft: 17.5,
+    charWidth: 5.3125
+  };
+  saveCustomPositions();
+  
+  document.querySelectorAll('.campo').forEach(el => {
+    el.style.top = el.dataset.defaultTop + 'mm';
+    el.style.left = el.dataset.defaultLeft + 'mm';
+  });
+  
+  document.getElementById('preview-ricetta').style.backgroundPosition = 'center center';
+  document.getElementById('preview-ricetta').style.backgroundSize = 'contain';
+  
+  updatePreview();
+}
+
+// Gestione modale posizioni
+function setupPositionModal() {
+  const modal = document.getElementById('positionModal');
+  const btnOpen = document.getElementById('btnModificaPosizioni');
+  const btnClose = document.querySelector('.close-modal');
+  const btnCancel = document.getElementById('btnCancelPosition');
+  const btnSave = document.getElementById('btnSavePosition');
+  const btnReset = document.getElementById('btnResetPosizioni');
+  const selectElement = document.getElementById('selectElement');
+  const inputElementId = document.getElementById('inputElementId');
+  const inputPosTop = document.getElementById('inputPosTop');
+  const inputPosLeft = document.getElementById('inputPosLeft');
+  
+  // Controlli sfondo
+  const selectBgPosition = document.getElementById('selectBgPosition');
+  const selectBgSize = document.getElementById('selectBgSize');
+  const customBgPositionControls = document.getElementById('customBgPositionControls');
+  const customBgSizeControls = document.getElementById('customBgSizeControls');
+  const inputBgPosX = document.getElementById('inputBgPosX');
+  const inputBgPosY = document.getElementById('inputBgPosY');
+  const inputBgWidth = document.getElementById('inputBgWidth');
+  const inputBgHeight = document.getElementById('inputBgHeight');
+  
+  // Controlli esenzione
+  const inputEsenzioneBaseTop = document.getElementById('inputEsenzioneBaseTop');
+  const inputEsenzioneBaseLeft = document.getElementById('inputEsenzioneBaseLeft');
+  const inputEsenzioneCharWidth = document.getElementById('inputEsenzioneCharWidth');
+  
+  selectBgPosition.addEventListener('change', function() {
+    if (this.value === 'custom') {
+      customBgPositionControls.style.display = '';
+    } else {
+      customBgPositionControls.style.display = 'none';
+    }
+  });
+  
+  selectBgSize.addEventListener('change', function() {
+    if (this.value === 'custom') {
+      customBgSizeControls.style.display = '';
+    } else {
+      customBgSizeControls.style.display = 'none';
+    }
+  });
+
+  btnOpen.addEventListener('click', () => {
+    // Inizializza i campi esistenti
+    selectElement.selectedIndex = 0;
+    updatePositionInputs(selectElement.value);
+    
+    // Inizializza i campi delle nuove funzionalità
+    inputEsenzioneBaseTop.value = esenzioneSettings.baseTop;
+    inputEsenzioneBaseLeft.value = esenzioneSettings.baseLeft;
+    inputEsenzioneCharWidth.value = esenzioneSettings.charWidth;
+    
+    // Gestisci campi sfondo
+    if (backgroundSettings.position === 'custom') {
+      selectBgPosition.value = 'custom';
+      customBgPositionControls.style.display = '';
+      inputBgPosX.value = backgroundSettings.posX;
+      inputBgPosY.value = backgroundSettings.posY;
+    } else {
+      selectBgPosition.value = backgroundSettings.position;
+      customBgPositionControls.style.display = 'none';
+    }
+    
+    if (backgroundSettings.size === 'custom') {
+      selectBgSize.value = 'custom';
+      customBgSizeControls.style.display = '';
+      inputBgWidth.value = backgroundSettings.width;
+      inputBgHeight.value = backgroundSettings.height;
+    } else {
+      selectBgSize.value = backgroundSettings.size;
+      customBgSizeControls.style.display = 'none';
+    }
+    
+    modal.style.display = 'block';
+  });
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+  
+  btnClose.addEventListener('click', closeModal);
+  btnCancel.addEventListener('click', closeModal);
+
+  selectElement.addEventListener('change', () => {
+    updatePositionInputs(selectElement.value);
+  });
+
+  function updatePositionInputs(elementId) {
+    const element = document.getElementById(elementId);
+    currentElement = element;
+    inputElementId.value = elementId;
+    
+    const top = parseFloat(element.style.top) || parseFloat(element.dataset.defaultTop);
+    const left = parseFloat(element.style.left) || parseFloat(element.dataset.defaultLeft);
+    
+    inputPosTop.value = top;
+    inputPosLeft.value = left;
+  }
+
+  btnSave.addEventListener('click', () => {
+    // Salvataggio posizione elemento corrente
+    if (currentElement) {
+      const top = parseFloat(inputPosTop.value);
+      const left = parseFloat(inputPosLeft.value);
+      
+      if (isNaN(top) || isNaN(left)) {
+        alert('Inserire valori numerici validi per la posizione dell\'elemento');
+        return;
+      }
+      
+      currentElement.style.top = top + 'mm';
+      currentElement.style.left = left + 'mm';
+      
+      campoPositions[currentElement.id] = { top, left };
+    }
+    
+    // Salvataggio impostazioni codice esenzione
+    const baseTop = parseFloat(inputEsenzioneBaseTop.value);
+    const baseLeft = parseFloat(inputEsenzioneBaseLeft.value);
+    const charWidth = parseFloat(inputEsenzioneCharWidth.value);
+    
+    if (isNaN(baseTop) || isNaN(baseLeft) || isNaN(charWidth) || charWidth <= 0) {
+      alert('Inserire valori numerici validi per il codice esenzione');
+      return;
+    }
+    
+    esenzioneSettings.baseTop = baseTop;
+    esenzioneSettings.baseLeft = baseLeft;
+    esenzioneSettings.charWidth = charWidth;
+    
+    // Salvataggio impostazioni sfondo
+    if (selectBgPosition.value === 'custom') {
+      backgroundSettings.position = 'custom';
+      backgroundSettings.posX = inputBgPosX.value;
+      backgroundSettings.posY = inputBgPosY.value;
+    } else {
+      backgroundSettings.position = selectBgPosition.value;
+    }
+    
+    if (selectBgSize.value === 'custom') {
+      backgroundSettings.size = 'custom';
+      backgroundSettings.width = inputBgWidth.value;
+      backgroundSettings.height = inputBgHeight.value;
+    } else {
+      backgroundSettings.size = selectBgSize.value;
+    }
+    
+    saveCustomPositions();
+    updatePreview();
+    closeModal();
+  });
+
+  btnReset.addEventListener('click', () => {
+    if (confirm('Ripristinare tutte le posizioni ai valori predefiniti?')) {
+      resetPositionsToDefault();
+    }
+  });
+}
+
+// Generazione PDF
+function generaPDF() {
+  const printContainer = document.createElement('div');
+  printContainer.id = 'print-container';
+  printContainer.style.position = 'absolute';
+  printContainer.style.left = '-9999px';
+  printContainer.style.width = '197mm';
+  printContainer.style.height = '153mm';
+  document.body.appendChild(printContainer);
+
+  // Clona l'intera preview ricetta con tutti gli stili
+  const content = document.getElementById('preview-ricetta').cloneNode(true);
+  
+  // Copia tutti gli stili dalla pagina principale
+  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+  
+  const printWindow = window.open('', '_blank');
+  printWindow.document.open();
+  printWindow.document.write('<!DOCTYPE html><html><head><title>Ricetta Rossa</title>');
+  
+  // Aggiungi tutti gli stili
+  styles.forEach(style => {
+    printWindow.document.write(style.outerHTML);
+  });
+  
+  // Aggiungi stili specifici per la stampa
+  printWindow.document.write(`
+    <style>
+      @page { 
+        size: 197mm 153mm; 
+        margin: 0; 
+      }
+      body { 
+        margin: 0; 
+        padding: 0; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact;
+      }
+      .ricetta { 
+        width: 197mm !important; 
+        height: 153mm !important; 
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+      }
+      .campo {
+        position: absolute !important;
+        visibility: visible !important;
+      }
+    </style>
+  `);
+  
+  printWindow.document.write('</head><body>');
+  printWindow.document.body.appendChild(content);
+  printWindow.document.close();
+
+  // Attendiamo che il contenuto sia caricato prima di stampare
+  setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+    document.body.removeChild(printContainer);
+  }, 500);
+}
+
+// Generazione JPG
+function generaJPG() {
+  const dpi = 600;
+  const pxPerMM = dpi / 25.4;
+  const dpiScale = dpi / 96;
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = 197 * pxPerMM;
+  canvas.height = 153 * pxPerMM;
+  
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'black';
+
+  function drawBoxChars(value, maxLength, xMM, yMM, charWidthMM = 5.3125) {
+    ctx.font = `${15 * dpiScale}px Courier New`;
+    const chars = padRight(value, maxLength).split('');
+    
+    chars.forEach((char, i) => {
+      ctx.fillText(
+        char,
+        (xMM + i * charWidthMM) * pxPerMM,
+        yMM * pxPerMM
+      );
+    });
+  }
+
+  // Nome
+  const nomeEl = document.getElementById('prev-nome');
+  const nomeTop = parseFloat(nomeEl.style.top) || parseFloat(nomeEl.dataset.defaultTop);
+  const nomeLeft = parseFloat(nomeEl.style.left) || parseFloat(nomeEl.dataset.defaultLeft);
+  
+  ctx.font = `${15 * dpiScale}px Arial`;
+  ctx.fillText(
+    document.getElementById('inputNome').value,
+    nomeLeft * pxPerMM,
+    nomeTop * pxPerMM
+  );
+
+  // Indirizzo
+  const indEl = document.getElementById('prev-indirizzo');
+  const indTop = parseFloat(indEl.style.top) || parseFloat(indEl.dataset.defaultTop);
+  const indLeft = parseFloat(indEl.style.left) || parseFloat(indEl.dataset.defaultLeft);
+  
+  ctx.fillText(
+    document.getElementById('inputIndirizzo').value,
+    indLeft * pxPerMM,
+    indTop * pxPerMM
+  );
+
+  // Codice Fiscale
+  const cfEl = document.getElementById('prev-codice-fiscale');
+  const cfTop = parseFloat(cfEl.style.top) || parseFloat(cfEl.dataset.defaultTop);
+  const cfLeft = parseFloat(cfEl.style.left) || parseFloat(cfEl.dataset.defaultLeft);
+  
+  drawBoxChars(document.getElementById('inputCF').value, 16, cfLeft, cfTop);
+
+  // Codice ASL
+  const aslEl = document.getElementById('prev-codice-asl');
+  const aslTop = parseFloat(aslEl.style.top) || parseFloat(aslEl.dataset.defaultTop);
+  const aslLeft = parseFloat(aslEl.style.left) || parseFloat(aslEl.dataset.defaultLeft);
+  
+  drawBoxChars(document.getElementById('inputASL').value, 5, aslLeft, aslTop);
+
+  // Confezioni
+  const confEl = document.getElementById('prev-confezioni');
+  const confTop = parseFloat(confEl.style.top) || parseFloat(confEl.dataset.defaultTop);
+  const confLeft = parseFloat(confEl.style.left) || parseFloat(confEl.dataset.defaultLeft);
+  
+  const confezioni = document.getElementById('inputConfezioni').value || '\\\\\\';
+  drawBoxChars(confezioni, 3, confLeft, confTop);
+
+  // Prescrizione
+  const prescrEl = document.getElementById('prev-prescrizione');
+  const prescrTop = parseFloat(prescrEl.style.top) || parseFloat(prescrEl.dataset.defaultTop);
+  const prescrLeft = parseFloat(prescrEl.style.left) || parseFloat(prescrEl.dataset.defaultLeft);
+  
+  ctx.font = `${15 * dpiScale}px Arial`;
+  const prescrizione = document.getElementById('inputPrescrizione').value;
+  const lines = prescrizione.split('\n');
+  lines.forEach((line, i) => {
+    ctx.fillText(line, prescrLeft * pxPerMM, (prescrTop + i * 5) * pxPerMM);
+  });
+
+  // Note
+  const nota1El = document.getElementById('prev-nota1');
+  const nota1Top = parseFloat(nota1El.style.top) || parseFloat(nota1El.dataset.defaultTop);
+  const nota1Left = parseFloat(nota1El.style.left) || parseFloat(nota1El.dataset.defaultLeft);
+  
+  const nota2El = document.getElementById('prev-nota2');
+  const nota2Top = parseFloat(nota2El.style.top) || parseFloat(nota2El.dataset.defaultTop);
+  const nota2Left = parseFloat(nota2El.style.left) || parseFloat(nota2El.dataset.defaultLeft);
+  
+  drawBoxChars(document.getElementById('inputNota1').value, 3, nota1Left, nota1Top);
+  drawBoxChars(document.getElementById('inputNota2').value, 3, nota2Left, nota2Top);
+
+  // Tipo Ricetta
+  const tipoEl = document.getElementById('prev-tipo-ricetta');
+  const tipoTop = parseFloat(tipoEl.style.top) || parseFloat(tipoEl.dataset.defaultTop);
+  const tipoLeft = parseFloat(tipoEl.style.left) || parseFloat(tipoEl.dataset.defaultLeft);
+  
+  drawBoxChars(document.getElementById('inputTipo').value, 2, tipoLeft, tipoTop);
+
+  // Data Prescrizione
+  const dataEl = document.getElementById('prev-data-prescrizione');
+  const dataTop = parseFloat(dataEl.style.top) || parseFloat(dataEl.dataset.defaultTop);
+  const dataLeft = parseFloat(dataEl.style.left) || parseFloat(dataEl.dataset.defaultLeft);
+  
+  const dataStr = formatDateToGGMMAA(document.getElementById('inputData').value);
+  drawBoxChars(dataStr, 6, dataLeft, dataTop);
+
+  // Stampa PC
+  const pcEl = document.getElementById('prev-stampa-pc');
+  const pcTop = parseFloat(pcEl.style.top) || parseFloat(pcEl.dataset.defaultTop);
+  const pcLeft = parseFloat(pcEl.style.left) || parseFloat(pcEl.dataset.defaultLeft);
+  
+  if (document.getElementById('inputStampaPC').checked) {
+    ctx.font = `${15 * dpiScale}px Arial`;
+    ctx.fillText('X', pcLeft * pxPerMM, pcTop * pxPerMM);
+  }
+
+  // Esenzione
+  const esenzioneEl = document.getElementById('prev-esenzione-x');
+  const esenzioneTop = parseFloat(esenzioneEl.style.top) || parseFloat(esenzioneEl.dataset.defaultTop);
+  const esenzioneLeft = parseFloat(esenzioneEl.style.left) || parseFloat(esenzioneEl.dataset.defaultLeft);
+  
+  if (document.getElementById('nonEsente').checked) {
+    ctx.font = `${15 * dpiScale}px Arial`;
+    ctx.fillText('X', esenzioneLeft * pxPerMM, esenzioneTop * pxPerMM);
+  } else {
+    drawBoxChars(document.getElementById('inputCodiceEsenzione').value, 6, esenzioneSettings.baseLeft, esenzioneSettings.baseTop, esenzioneSettings.charWidth);
+  }
+
+  // Download immagine
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = 'ricetta-rossa.jpg';
+    link.href = url;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }, 'image/jpeg', 1.0);
+}
+
+// Inizializzazione
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('inputData').value = `${yyyy}-${mm}-${dd}`;
+  
+  loadCustomPositions();
+  setupEsenzioneToggle();
+  setupPositionModal();
+  
+  document.querySelectorAll('#formRicetta input, #formRicetta textarea').forEach(el => {
+    el.addEventListener('input', updatePreview);
+  });
+  document.getElementById('inputStampaPC').addEventListener('change', updatePreview);
+  
+  document.getElementById('btnGeneraPDF').addEventListener('click', generaPDF);
+  document.getElementById('btnGeneraJPG').addEventListener('click', generaJPG);
+  
+  applyCustomPositions();
+  updatePreview();
+});
+</script>
+</body>
+
+</html>
